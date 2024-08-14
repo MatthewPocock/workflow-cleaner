@@ -1,0 +1,15 @@
+name: 🐛debug
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: debug
+        shell: bash
+        env:
+          GH_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo $GH_CONTEXT
