@@ -5,13 +5,19 @@ repo="MatthewPocock/workflow-cleaner"
 select_workflow() {
   gh api --paginate "/repos/$repo/actions/workflows" \
     | jq -r '.workflows[] | [.id, .name, .path] | @tsv' \
-    | fzf
+    | fzf --multi
 }
 
 select_runs() {
-  read -r id name
-    gh api --paginate "/repos/$repo/actions/runs" \
-    | jq -r --arg wid "$id" '.workflow_runs[] | select(.workflow_id==($wid|tonumber)) | "\(.id) \(.name)"'
+  workflow_ids=()
+  while read -r id name; do
+    workflow_ids+=("$id")
+  done
+
+  ids_string=$(IFS=,; echo "${workflow_ids[*]}")
+
+  gh api --paginate "/repos/$repo/actions/runs?workflow_id=$ids_string" \
+    | jq -r '.workflow_runs[] | "\(.id) \(.name)"'
 }
 
 delete_run() {
