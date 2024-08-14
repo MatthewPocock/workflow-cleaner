@@ -1,4 +1,4 @@
-name: 🐛debug
+name: 🐛 debug
 
 on:
   workflow_dispatch:
