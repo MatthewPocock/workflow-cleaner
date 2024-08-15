@@ -9,33 +9,24 @@ select_workflow() {
 }
 
 select_runs() {
-  workflow_ids=()
   while read -r id name; do
-    workflow_ids+=("$id")
+    gh api --paginate "/repos/$repo/actions/workflows/$id/runs" \
+      | jq -r '.workflow_runs[] | [.id, .name, .display_title] | @tsv'
   done
-
-  gh api --paginate "/repos/$repo/actions/runs" \
-    | jq -r --argjson wids "$(printf '%s\n' "${workflow_ids[@]}" | jq -R . | jq -s .)" '
-      .workflow_runs[]
-      | select(.workflow_id as $wid | $wids | index($wid | tostring))
-      | "\(.id) \(.name)"
-    '
 }
 
 delete_run() {
-  id=$1
-  name=$2
-  echo "Deleting run: $id - $name"
-  gh api -X DELETE "/repos/$repo/actions/runs/$id" --silent \
-  && echo "Deleted ✅" \
-  || echo "Failed! ❌"
-}
-
-delete_runs() {
-  while read -r id name; do
-    delete_run "$id" "$name"
-    sleep 0.25
+  while IFS=$'\t' read -r id name display_title; do
+    echo "Deleting run: $id - $name - $display_title"
+      gh api -X DELETE "/repos/$repo/actions/runs/$id" --silent \
+       && echo "Deleted ✅" \
+       || echo "Failed! ❌"
+    sleep .1
   done
 }
 
-select_workflow | select_runs | delete_runs
+main() {
+  select_workflow | select_runs | delete_run
+}
+
+main
