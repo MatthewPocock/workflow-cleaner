@@ -14,10 +14,12 @@ select_runs() {
     workflow_ids+=("$id")
   done
 
-  ids_string=$(IFS=,; echo "${workflow_ids[*]}")
-
-  gh api --paginate "/repos/$repo/actions/runs?workflow_id=$ids_string" \
-    | jq -r '.workflow_runs[] | "\(.id) \(.name)"'
+  gh api --paginate "/repos/$repo/actions/runs" \
+    | jq -r --argjson wids "$(printf '%s\n' "${workflow_ids[@]}" | jq -R . | jq -s .)" '
+      .workflow_runs[]
+      | select(.workflow_id as $wid | $wids | index($wid | tostring))
+      | "\(.id) \(.name)"
+    '
 }
 
 delete_run() {
