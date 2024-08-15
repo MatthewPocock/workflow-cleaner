@@ -1,7 +1,5 @@
 #!/bin/bash
 
-repo="MatthewPocock/workflow-cleaner"
-
 select_workflow() {
   gh api --paginate "/repos/$repo/actions/workflows" \
     | jq -r '.workflows[] | [.id, .name] | @tsv' \
@@ -26,7 +24,8 @@ delete_run() {
 }
 
 main() {
+  repo=$1
   select_workflow | select_runs | delete_run
 }
 
-main
+main "$@"
